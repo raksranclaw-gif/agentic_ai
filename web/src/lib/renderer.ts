@@ -44,8 +44,8 @@ export async function uploadAudio(audioBuffer: Buffer): Promise<string> {
   const formData = new FormData();
   formData.append(
     "file",
-    new Blob([audioBuffer as BlobPart], { type: "audio/mpeg" }),
-    "narration.mp3"
+    new Blob([audioBuffer as BlobPart], { type: "audio/wav" }),
+    "narration.wav"
   );
 
   const response = await fetch(`${RENDERER_URL}/upload-audio`, {

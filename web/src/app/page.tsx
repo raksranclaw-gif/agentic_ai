@@ -21,7 +21,7 @@ const EDUCATION_LEVELS = [
 const STAGE_LABELS: Record<Stage, string> = {
   idle: "",
   generating_script: "Writing the script & animation plan…",
-  generating_audio: "Generating narration with ElevenLabs…",
+  generating_audio: "Generating narration with Gemini TTS…",
   rendering_video: "Rendering Manim animations…",
   compositing: "Compositing final video…",
   done: "Your video is ready!",
@@ -233,7 +233,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="mt-auto pt-16 pb-6 text-center text-xs text-foreground/30">
-        Powered by Gemini · ElevenLabs · Manim
+        Powered by Gemini · Manim
       </footer>
     </main>
   );

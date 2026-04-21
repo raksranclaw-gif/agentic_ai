@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { generateScript } from "@/lib/gemini";
-import { generateAudio } from "@/lib/elevenlabs";
+import { generateAudio } from "@/lib/tts";
 import { renderSegments, compositeVideo, uploadAudio } from "@/lib/renderer";
 import { GenerateRequest } from "@/lib/types";
 

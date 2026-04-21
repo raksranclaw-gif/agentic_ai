@@ -19,12 +19,12 @@ A web application that generates bite-sized, animated learning videos. Enter a t
         ┌─────────────┼──────────────┐
         │             │              │
    ┌────▼────┐  ┌─────▼─────┐  ┌────▼──────┐
-   │ Google  │  │ ElevenLabs│  │  Renderer  │
-   │ Gemini  │  │ TTS API   │  │  (FastAPI) │
-   │         │  │           │  │            │
+   │ Gemini  │  │ Gemini    │  │  Renderer  │
+   │ 2.0     │  │ TTS       │  │  (FastAPI) │
+   │ Flash   │  │           │  │            │
    │ Script &│  │ Narration │  │ Manim code │
    │ Manim   │  │ audio     │  │ generation │
-   │ prompts │  │ (.mp3)    │  │ + render   │
+   │ prompts │  │ (.wav)    │  │ + render   │
    └─────────┘  └───────────┘  │ + ffmpeg   │
                                │ composite  │
                                └────────────┘
@@ -33,7 +33,7 @@ A web application that generates bite-sized, animated learning videos. Enter a t
 ### Pipeline Flow
 
 1. **Script Generation** – Gemini generates a structured script with narration text and Manim scene descriptions, split into 4-6 segments (~60s total).
-2. **Audio Generation** – ElevenLabs converts the full narration into high-quality speech audio.
+2. **Audio Generation** – Gemini TTS converts the full narration into speech audio (WAV).
 3. **Manim Rendering** – Each segment's scene description is converted to Manim Python code (via Gemini), then rendered to MP4 clips.
 4. **Compositing** – ffmpeg concatenates the video segments and overlays the narration audio.
 5. **Delivery** – The final video URL is streamed back to the browser via SSE.
@@ -43,8 +43,8 @@ A web application that generates bite-sized, animated learning videos. Enter a t
 | Layer | Technology |
 |-------|-----------|
 | Frontend | Next.js 16, React 19, Tailwind CSS 4, TypeScript |
-| Script Generation | Google Gemini |
-| Voice Synthesis | ElevenLabs Text-to-Speech |
+| Script Generation | Google Gemini 2.0 Flash |
+| Voice Synthesis | Google Gemini TTS (2.5 Flash Preview) |
 | Animation | Manim Community Edition |
 | Video Processing | ffmpeg |
 | Renderer Backend | Python 3.12, FastAPI, Uvicorn |
@@ -57,14 +57,14 @@ A web application that generates bite-sized, animated learning videos. Enter a t
 - Node.js 22+
 - Python 3.12+
 - Docker & Docker Compose (recommended)
-- API keys for [Google AI Studio (Gemini)](https://aistudio.google.com/apikey) and [ElevenLabs](https://elevenlabs.io/)
+- API key for [Google AI Studio (Gemini)](https://aistudio.google.com/apikey)
 
 ### Option 1: Docker Compose (recommended)
 
 ```bash
 # Clone and configure
 cp .env.example .env
-# Edit .env with your API keys
+# Edit .env with your Gemini API key
 
 # Start everything
 docker compose up --build
@@ -94,7 +94,7 @@ uvicorn main:app --reload --port 8000
 ```bash
 cd web
 npm install
-cp .env.example .env.local  # add your API keys
+cp .env.example .env.local  # add your GEMINI_API_KEY
 npm run dev
 ```
 
@@ -108,7 +108,6 @@ The Next.js web app deploys directly to Vercel:
 2. Import the project in Vercel, set the root directory to `web/`.
 3. Add environment variables in Vercel's dashboard:
    - `GEMINI_API_KEY`
-   - `ELEVENLABS_API_KEY`
    - `RENDERER_URL` – the public URL of your renderer service
 
 The renderer service must be hosted separately (e.g., Railway, Fly.io, or any Docker host) since it needs Python, Manim, LaTeX, and ffmpeg.
@@ -117,11 +116,10 @@ The renderer service must be hosted separately (e.g., Railway, Fly.io, or any Do
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `GEMINI_API_KEY` | Yes | – | Google Gemini API key for script + code generation |
-| `ELEVENLABS_API_KEY` | Yes | – | ElevenLabs API key for TTS |
-| `GEMINI_MODEL` | No | `gemini-2.0-flash` | Gemini model to use |
-| `ELEVENLABS_VOICE_ID` | No | `EXAVITQu4vr4xnSDxMaL` | ElevenLabs voice ID ("Sarah") |
-| `ELEVENLABS_MODEL_ID` | No | `eleven_multilingual_v2` | ElevenLabs TTS model |
+| `GEMINI_API_KEY` | Yes | – | Google Gemini API key (used for script gen, Manim code gen, and TTS) |
+| `GEMINI_MODEL` | No | `gemini-2.0-flash` | Gemini model for script + code generation |
+| `GEMINI_TTS_MODEL` | No | `gemini-2.5-flash-preview-tts` | Gemini TTS model for narration |
+| `GEMINI_TTS_VOICE` | No | `Kore` | Gemini TTS voice name (Kore, Puck, Charon, Fenrir, Aoede, etc.) |
 | `RENDERER_URL` | No | `http://localhost:8000` | URL of the renderer service |
 | `RENDERER_PUBLIC_URL` | No | `http://localhost:8000` | Public URL for video delivery |
 
@@ -139,7 +137,7 @@ The renderer service must be hosted separately (e.g., Railway, Fly.io, or any Do
 │   │   └── lib/
 │   │       ├── types.ts           # Shared TypeScript types
 │   │       ├── gemini.ts          # Script generation via Gemini
-│   │       ├── elevenlabs.ts      # Audio generation via ElevenLabs
+│   │       ├── tts.ts             # Audio generation via Gemini TTS
 │   │       └── renderer.ts       # Renderer service client
 │   ├── Dockerfile
 │   └── package.json
