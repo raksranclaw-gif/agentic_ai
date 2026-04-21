@@ -1,0 +1,28 @@
+services:
+  renderer:
+    build: ./renderer
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
+      - RENDERER_PUBLIC_URL=${RENDERER_PUBLIC_URL:-http://localhost:8000}
+    volumes:
+      - render_output:/tmp/bitesized_output
+
+  web:
+    build: ./web
+    ports:
+      - "3000:3000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID:-EXAVITQu4vr4xnSDxMaL}
+      - ELEVENLABS_MODEL_ID=${ELEVENLABS_MODEL_ID:-eleven_multilingual_v2}
+      - RENDERER_URL=http://renderer:8000
+    depends_on:
+      - renderer
+
+volumes:
+  render_output:
