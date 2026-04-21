@@ -1,0 +1,27 @@
+services:
+  renderer:
+    build: ./renderer
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash-lite}
+      - RENDERER_PUBLIC_URL=${RENDERER_PUBLIC_URL:-http://localhost:8000}
+    volumes:
+      - render_output:/tmp/bitesized_output
+
+  web:
+    build: ./web
+    ports:
+      - "3000:3000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash-lite}
+      - GEMINI_TTS_MODEL=${GEMINI_TTS_MODEL:-gemini-2.5-flash-preview-tts}
+      - GEMINI_TTS_VOICE=${GEMINI_TTS_VOICE:-Kore}
+      - RENDERER_URL=http://renderer:8000
+    depends_on:
+      - renderer
+
+volumes:
+  render_output:
