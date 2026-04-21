@@ -25,37 +25,60 @@ RULES:
 - Do NOT include Python code in manim_prompt; describe the scene declaratively.
 - Respond with ONLY the JSON object, no markdown fences or extra text.`;
 
+async function callGeminiWithRetry(
+  url: string,
+  body: object,
+  maxRetries = 3
+): Promise<Response> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (response.ok || (response.status !== 503 && response.status !== 429)) {
+      return response;
+    }
+
+    if (attempt < maxRetries) {
+      const delay = Math.pow(2, attempt + 1) * 1000; // 2s, 4s, 8s
+      await new Promise((r) => setTimeout(r, delay));
+    } else {
+      return response;
+    }
+  }
+
+  throw new Error("Unreachable");
+}
+
 export async function generateScript(
   req: GenerateRequest
 ): Promise<GeneratedScript> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
 
-  const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
 
   const userPrompt = `Term: "${req.term}"
 Education level: ${req.level.replace("_", " ")}
 
 Generate the educational video script and Manim animation plan.`;
 
-  const response = await fetch(
+  const response = await callGeminiWithRetry(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: `${SYSTEM_PROMPT}\n\n${userPrompt}` }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 4000,
-          responseMimeType: "application/json",
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: `${SYSTEM_PROMPT}\n\n${userPrompt}` }],
         },
-      }),
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 4000,
+        responseMimeType: "application/json",
+      },
     }
   );
 

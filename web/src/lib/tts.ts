@@ -37,6 +37,33 @@ function writeWavHeader(pcmData: Uint8Array, sampleRate = 24000, channels = 1, b
   return result;
 }
 
+async function fetchWithRetry(
+  url: string,
+  body: object,
+  maxRetries = 3
+): Promise<Response> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (response.ok || (response.status !== 503 && response.status !== 429)) {
+      return response;
+    }
+
+    if (attempt < maxRetries) {
+      const delay = Math.pow(2, attempt + 1) * 1000;
+      await new Promise((r) => setTimeout(r, delay));
+    } else {
+      return response;
+    }
+  }
+
+  throw new Error("Unreachable");
+}
+
 export async function generateAudio(text: string): Promise<Buffer> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
@@ -44,30 +71,26 @@ export async function generateAudio(text: string): Promise<Buffer> {
   const ttsModel = process.env.GEMINI_TTS_MODEL || "gemini-2.5-flash-preview-tts";
   const voiceName = process.env.GEMINI_TTS_VOICE || "Kore";
 
-  const response = await fetch(
+  const response = await fetchWithRetry(
     `https://generativelanguage.googleapis.com/v1beta/models/${ttsModel}:generateContent?key=${apiKey}`,
     {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: `Say in a clear, friendly, educational tone: ${text}`,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          responseModalities: ["AUDIO"],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName },
+      contents: [
+        {
+          parts: [
+            {
+              text: `Say in a clear, friendly, educational tone: ${text}`,
             },
+          ],
+        },
+      ],
+      generationConfig: {
+        responseModalities: ["AUDIO"],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName },
           },
         },
-      }),
+      },
     }
   );
 

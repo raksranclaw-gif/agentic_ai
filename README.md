@@ -43,7 +43,7 @@ A web application that generates bite-sized, animated learning videos. Enter a t
 | Layer | Technology |
 |-------|-----------|
 | Frontend | Next.js 16, React 19, Tailwind CSS 4, TypeScript |
-| Script Generation | Google Gemini 2.0 Flash |
+| Script Generation | Google Gemini 2.5 Flash Lite |
 | Voice Synthesis | Google Gemini TTS (2.5 Flash Preview) |
 | Animation | Manim Community Edition |
 | Video Processing | ffmpeg |
@@ -117,7 +117,7 @@ The renderer service must be hosted separately (e.g., Railway, Fly.io, or any Do
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `GEMINI_API_KEY` | Yes | – | Google Gemini API key (used for script gen, Manim code gen, and TTS) |
-| `GEMINI_MODEL` | No | `gemini-2.0-flash` | Gemini model for script + code generation |
+| `GEMINI_MODEL` | No | `gemini-2.5-flash-lite` | Gemini model for script + code generation |
 | `GEMINI_TTS_MODEL` | No | `gemini-2.5-flash-preview-tts` | Gemini TTS model for narration |
 | `GEMINI_TTS_VOICE` | No | `Kore` | Gemini TTS voice name (Kore, Puck, Charon, Fenrir, Aoede, etc.) |
 | `RENDERER_URL` | No | `http://localhost:8000` | URL of the renderer service |

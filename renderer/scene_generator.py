@@ -44,7 +44,7 @@ def generate_manim_code(prompt: str, scene_name: str, duration: float) -> str:
 
     try:
         client = genai.Client(api_key=api_key)
-        model_name = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+        model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash-lite")
 
         user_msg = (
             f"Scene class name: {scene_name}\n"
