@@ -233,7 +233,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="mt-auto pt-16 pb-6 text-center text-xs text-foreground/30">
-        Powered by OpenAI · ElevenLabs · Manim
+        Powered by Gemini · ElevenLabs · Manim
       </footer>
     </main>
   );

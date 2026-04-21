@@ -1,15 +1,16 @@
 """
 Generates runnable Manim Community Edition Python code from a declarative prompt.
 
-Uses OpenAI to translate natural-language scene descriptions into Manim code,
+Uses Google Gemini to translate natural-language scene descriptions into Manim code,
 with a fallback template in case the LLM is unavailable.
 """
 
 import os
-import json
 import re
 import textwrap
-from openai import OpenAI
+
+from google import genai
+from google.genai import types
 
 SYSTEM_PROMPT = textwrap.dedent("""\
     You are a Manim Community Edition (v0.18+) code generator.
@@ -37,12 +38,14 @@ SYSTEM_PROMPT = textwrap.dedent("""\
 
 def generate_manim_code(prompt: str, scene_name: str, duration: float) -> str:
     """Generate Manim Python code from a prompt. Falls back to a safe template on failure."""
-    api_key = os.environ.get("OPENAI_API_KEY")
+    api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         return _fallback_scene(scene_name, prompt, duration)
 
     try:
-        client = OpenAI(api_key=api_key)
+        client = genai.Client(api_key=api_key)
+        model_name = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+
         user_msg = (
             f"Scene class name: {scene_name}\n"
             f"Target duration: {duration} seconds\n"
@@ -50,17 +53,17 @@ def generate_manim_code(prompt: str, scene_name: str, duration: float) -> str:
             f"Generate the complete Manim Python file."
         )
 
-        response = client.chat.completions.create(
-            model=os.environ.get("OPENAI_MODEL", "gpt-4o"),
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_msg},
-            ],
-            temperature=0.3,
-            max_tokens=3000,
+        response = client.models.generate_content(
+            model=model_name,
+            contents=user_msg,
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
+                temperature=0.3,
+                max_output_tokens=3000,
+            ),
         )
 
-        code = response.choices[0].message.content or ""
+        code = response.text or ""
         code = _strip_markdown_fences(code)
 
         if f"class {scene_name}" not in code:
